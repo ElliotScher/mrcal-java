@@ -21,7 +21,11 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.opencv.core.MatOfPoint2f;
+
+import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.geometry.Pose3d;
+import edu.wpi.first.math.geometry.Rotation3d;
+import edu.wpi.first.math.geometry.Translation3d;
 
 public class MrCalJNI {
     public static class MrCalResult {
@@ -32,7 +36,7 @@ public class MrCalJNI {
         public double warp_x;
         public double warp_y;
         public int Noutliers;
-        public Pose3d[] optimizedPoses;
+        public List<Pose3d> optimizedPoses;
 
         public MrCalResult(boolean success) {
             this.success = success;
@@ -47,6 +51,20 @@ public class MrCalJNI {
             this.warp_x = warp_x;
             this.warp_y = warp_y;
             this.Noutliers = Noutliers;
+
+            for (int i = 0; i < optimized_rt_rtoref.length; i+=6) {
+                var rot = new Rotation3d(VecBuilder.fill(
+                    optimized_rt_rtoref[i+0],
+                    optimized_rt_rtoref[i+1],
+                    optimized_rt_rtoref[i+2]
+                ));
+                var t = new Translation3d(
+                    optimized_rt_rtoref[i+3],
+                    optimized_rt_rtoref[i+4],
+                    optimized_rt_rtoref[i+5]);
+
+                optimizedPoses.add(new Pose3d(t, rot));
+            }
         }
 
         @Override
