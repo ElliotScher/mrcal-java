@@ -21,6 +21,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.opencv.core.MatOfPoint2f;
+import edu.wpi.first.math.geometry.Pose3d;
 
 public class MrCalJNI {
     public static class MrCalResult {
@@ -31,6 +32,7 @@ public class MrCalJNI {
         public double warp_x;
         public double warp_y;
         public int Noutliers;
+        public Pose3d[] optimizedPoses;
 
         public MrCalResult(boolean success) {
             this.success = success;
