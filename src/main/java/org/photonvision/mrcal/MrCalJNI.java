@@ -17,8 +17,6 @@
 
 package org.photonvision.mrcal;
 
-import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -38,7 +36,7 @@ public class MrCalJNI {
             this.success = success;
         }
         public MrCalResult(
-                boolean success, double[] intrinsics, double rms_error, double[] residuals, double warp_x,
+                boolean success, double[] intrinsics, double[] optimized_rt_rtoref, double rms_error, double[] residuals, double warp_x,
                 double warp_y, int Noutliers) {
             this.success = success;
             this.intrinsics = intrinsics;
