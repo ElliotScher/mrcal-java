@@ -219,16 +219,17 @@ Java_org_photonvision_mrcal_MrCalJNI_mrcal_1calibrate_1camera
       env, reinterpret_cast<double *>(total_frames_rt_toref.data()),
       total_frames_rt_toref.size() * sizeof(mrcal_pose_t) / sizeof(double));
 
-  std::vector<jboolean> cornersUsedMask;
+  std::vector<jboolean> cornersUsedMask(observations.size());
   std::transform(observations.begin(), observations.end(),
                  cornersUsedMask.begin(),
-                 [](const auto &pt) { return pt.z > 0; });
+                 [](const auto &pt) { return (jboolean)(pt.z > 0); });
+  auto cornersUsedJarr = MakeJBooleanArray(env, cornersUsedMask.data(), cornersUsedMask.size());
 
   // Actually call the constructor
   auto ret =
       env->NewObject(detectionClass, constructor, success, boardWidth,
                      boardHeight, intrinsics, optimized_rt_toref, rms_err,
-                     residuals, warp_x, warp_y, Noutliers, cornersUsedMask);
+                     residuals, warp_x, warp_y, Noutliers, cornersUsedJarr);
 
   return ret;
 }

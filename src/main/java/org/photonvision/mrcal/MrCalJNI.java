@@ -43,8 +43,10 @@ public class MrCalJNI {
         public MrCalResult(boolean success) {
             this.success = success;
         }
+
         public MrCalResult(
-                boolean success, int width, int height, double[] intrinsics, double[] optimized_rt_rtoref, double rms_error, double[] residuals, double warp_x,
+                boolean success, int width, int height, double[] intrinsics, double[] optimized_rt_rtoref,
+                double rms_error, double[] residuals, double warp_x,
                 double warp_y, int Noutliers, boolean[] cornerUseMask) {
             this.success = success;
             this.intrinsics = intrinsics;
@@ -54,24 +56,24 @@ public class MrCalJNI {
             this.warp_y = warp_y;
             this.Noutliers = Noutliers;
 
-            for (int i = 0; i < optimized_rt_rtoref.length; i+=6) {
+            optimizedPoses = new ArrayList<>();
+            for (int i = 0; i < optimized_rt_rtoref.length; i += 6) {
                 var rot = new Rotation3d(VecBuilder.fill(
-                    optimized_rt_rtoref[i+0],
-                    optimized_rt_rtoref[i+1],
-                    optimized_rt_rtoref[i+2]
-                ));
+                        optimized_rt_rtoref[i + 0],
+                        optimized_rt_rtoref[i + 1],
+                        optimized_rt_rtoref[i + 2]));
                 var t = new Translation3d(
-                    optimized_rt_rtoref[i+3],
-                    optimized_rt_rtoref[i+4],
-                    optimized_rt_rtoref[i+5]);
+                        optimized_rt_rtoref[i + 3],
+                        optimized_rt_rtoref[i + 4],
+                        optimized_rt_rtoref[i + 5]);
 
                 optimizedPoses.add(new Pose3d(t, rot));
             }
 
-            var cornersPerBoard = width*height;
-            cornersUsed=new ArrayList<>();
-            for (int cornerIdx = 0; cornerIdx < cornerUseMask.length; cornerIdx+=cornersPerBoard) {
-                cornersUsed.add(Arrays.copyOfRange(cornerUseMask, cornerIdx, cornerIdx+cornersPerBoard));
+            var cornersPerBoard = width * height;
+            cornersUsed = new ArrayList<>();
+            for (int cornerIdx = 0; cornerIdx < cornerUseMask.length; cornerIdx += cornersPerBoard) {
+                cornersUsed.add(Arrays.copyOfRange(cornerUseMask, cornerIdx, cornerIdx + cornersPerBoard));
             }
         }
 
@@ -88,7 +90,8 @@ public class MrCalJNI {
             int boardWidth, int boardHeight, double boardSpacing,
             int imageWidth, int imageHeight, double focalLen);
 
-    public static native boolean undistort_mrcal(long srcMat, long dstMat, long cameraMat, long distCoeffsMat, int lensModelOrdinal, int order, int Nx, int Ny, int fov_x_deg);
+    public static native boolean undistort_mrcal(long srcMat, long dstMat, long cameraMat, long distCoeffsMat,
+            int lensModelOrdinal, int order, int Nx, int Ny, int fov_x_deg);
 
     public static MrCalResult calibrateCamera(
             List<MatOfPoint2f> board_corners,
@@ -115,6 +118,7 @@ public class MrCalJNI {
             return new MrCalResult(false);
         }
 
-        return mrcal_calibrate_camera(observations, boardWidth, boardHeight, boardSpacing, imageWidth, imageHeight, focalLen);
+        return mrcal_calibrate_camera(observations, boardWidth, boardHeight, boardSpacing, imageWidth, imageHeight,
+                focalLen);
     }
 }
