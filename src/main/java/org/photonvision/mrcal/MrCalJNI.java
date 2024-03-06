@@ -17,6 +17,7 @@
 
 package org.photonvision.mrcal;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -37,13 +38,14 @@ public class MrCalJNI {
         public double warp_y;
         public int Noutliers;
         public List<Pose3d> optimizedPoses;
+        public List<boolean[]> cornersUsed;
 
         public MrCalResult(boolean success) {
             this.success = success;
         }
         public MrCalResult(
-                boolean success, double[] intrinsics, double[] optimized_rt_rtoref, double rms_error, double[] residuals, double warp_x,
-                double warp_y, int Noutliers) {
+                boolean success, int width, int height, double[] intrinsics, double[] optimized_rt_rtoref, double rms_error, double[] residuals, double warp_x,
+                double warp_y, int Noutliers, boolean[] cornerUseMask) {
             this.success = success;
             this.intrinsics = intrinsics;
             this.rms_error = rms_error;
@@ -64,6 +66,12 @@ public class MrCalJNI {
                     optimized_rt_rtoref[i+5]);
 
                 optimizedPoses.add(new Pose3d(t, rot));
+            }
+
+            var cornersPerBoard = width*height;
+            cornersUsed=new ArrayList<>();
+            for (int cornerIdx = 0; cornerIdx < cornerUseMask.length; cornerIdx+=cornersPerBoard) {
+                cornersUsed.add(Arrays.copyOfRange(cornerUseMask, cornerIdx, cornerIdx+cornersPerBoard));
             }
         }
 

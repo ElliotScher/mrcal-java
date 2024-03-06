@@ -20,9 +20,9 @@
 #include <algorithm>
 #include <cstdio>
 #include <span>
+#include <sstream>
 #include <stdexcept>
 #include <vector>
-#include <sstream>
 
 #include "mrcal_wrapper.h"
 
@@ -51,11 +51,12 @@ WPI_JNI_MAKEJARRAY(jdouble, Double)
 #define JNI_INT "I"
 #define JNI_DOUBLE "D"
 #define JNI_DOUBLEARR "[D"
+#define JNI_BOOLARR "[Z"
 
 #define JNI_STRINGIFY(x) #x
 
 template <typename A, typename... Ts>
-std::string jni_make_method_sig(A retval, Ts&&... args) {
+std::string jni_make_method_sig(A retval, Ts &&...args) {
   std::ostringstream oss;
   (oss << "(" << ... << std::forward<Ts>(args)) << ")" << retval;
   return oss.str();
@@ -115,8 +116,12 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
 
   // Find the constructor. Reference:
   // https://www.microfocus.com/documentation/extend-acucobol/925/BKITITJAVAS027.html
-  constructor =
-      env->GetMethodID(detectionClass, "<init>", jni_make_method_sig(JNI_VOID, JNI_BOOL, JNI_DOUBLEARR, JNI_DOUBLEARR, JNI_DOUBLE, JNI_DOUBLEARR, JNI_DOUBLE, JNI_DOUBLE, JNI_INT).c_str());
+  constructor = env->GetMethodID(
+      detectionClass, "<init>",
+      jni_make_method_sig(JNI_VOID, JNI_BOOL, JNI_INT, JNI_INT, JNI_DOUBLEARR,
+                          JNI_DOUBLEARR, JNI_DOUBLE, JNI_DOUBLEARR, JNI_DOUBLE,
+                          JNI_DOUBLE, JNI_INT, JNI_BOOLARR)
+          .c_str());
 
   return JNI_VERSION_1_6;
 }
@@ -211,14 +216,19 @@ Java_org_photonvision_mrcal_MrCalJNI_mrcal_1calibrate_1camera
   jint Noutliers = stats.Noutliers_board;
 
   jdoubleArray optimized_rt_toref = MakeJDoubleArray(
-      env, (double *)total_frames_rt_toref.data(),
+      env, reinterpret_cast<double *>(total_frames_rt_toref.data()),
       total_frames_rt_toref.size() * sizeof(mrcal_pose_t) / sizeof(double));
 
-  env->SetDoubleArrayRegion(observations_board, 0, observations.size()*3, (double*)observations.data());
+  std::vector<jboolean> cornersUsedMask;
+  std::transform(observations.begin(), observations.end(),
+                 cornersUsedMask.begin(),
+                 [](const auto &pt) { return pt.z > 0; });
 
   // Actually call the constructor
-  auto ret = env->NewObject(detectionClass, constructor, success, intrinsics, optimized_rt_toref,
-                            rms_err, residuals, warp_x, warp_y, Noutliers);
+  auto ret =
+      env->NewObject(detectionClass, constructor, success, boardWidth,
+                     boardHeight, intrinsics, optimized_rt_toref, rms_err,
+                     residuals, warp_x, warp_y, Noutliers, cornersUsedMask);
 
   return ret;
 }
