@@ -29,6 +29,7 @@ set(OPENCV_VERSION "4.8.0-2")
 
 # type can be "", "debug", "static", or "staticdebug"
 set(OPENCV_TYPE "")
+set(OPENCV_ARCH "windowsx86-64")
 
 # Download opencv, and save the path
 include(FetchContent)
@@ -53,27 +54,28 @@ file(GLOB_RECURSE OPENCV_LIB_PATH
 SET(OPENCV_INCLUDE_PATH ${opencv_header_SOURCE_DIR})
 message("Depending on opencv ${OPENCV_LIB_PATH}")
 
-# headers and sources
 set(
-    INCLUDE_HPP
-)
-
-set(
-    SRC_HPP
-)
-set(
-    SRC_CPP
+    SRC
     src/mrcal_jni.h
+    src/mrcal_wrapper.h
     src/mrcal_wrapper.cpp
     src/mrcal_jni.cpp
     libdogleg/dogleg.c
-    mrcal/mrcal.c mrcal/cahvore.cc mrcal/poseutils-opencv.c mrcal/poseutils-uses-autodiff.cc mrcal/poseutils.c mrcal/poseutils-opencv.c mrcal/mrcal-opencv.c mrcal/triangulation.cc
+    mrcal/mrcal.c
+    mrcal/cahvore.cc
+    mrcal/poseutils-opencv.c
+    mrcal/poseutils-uses-autodiff.cc
+    mrcal/poseutils.c
+    mrcal/poseutils-opencv.c
+    mrcal/mrcal-opencv.c
+    mrcal/triangulation.cc
 )
 
 
-# ignore opencv spam
+#ignore opencv spam
 # set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -Wall -Werror -Wno-deprecated-enum-enum-conversion")
 
+find_package(OpenCV REQUIRED)
 
 # Gennerate minimath
 find_package( Perl REQUIRED )
@@ -89,28 +91,17 @@ set( CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin )
 set( CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib )
 
 # Create shared library
-add_library(mrcal_jni SHARED ${INCLUDE_HPP} ${SRC_HPP} ${SRC_CPP})
-target_include_directories(mrcal_jni SYSTEM PUBLIC ${JNI_INCLUDE_DIRS} ${OPENCV_INCLUDE_PATH} mrcal libdogleg)
+add_library(mrcal_jni STATIC ${SRC})
+target_include_directories(mrcal_jni SYSTEM PUBLIC ${JNI_INCLUDE_DIRS} ${OPENCV_INCLUDE_PATH} src mrcal libdogleg)
 add_dependencies(mrcal_jni generate_minimath)
 
 IF (WIN32)
     find_package(SuiteSparse CONFIG REQUIRED)
-    target_link_libraries(mrcal_jni ${OPENCV_LIB_PATH} SuiteSparse::amd SuiteSparse::cholmod)
+    target_link_libraries(mrcal_jni ${OpenCV_LIBS} SuiteSparse::amd SuiteSparse::cholmod)
 ELSE()
-    target_link_libraries(mrcal_jni ${OPENCV_LIB_PATH} suitesparseconfig cholmod)
+    target_link_libraries(mrcal_jni ${OpenCV_LIBS} suitesparseconfig cholmod)
     target_include_directories(mrcal_jni PUBLIC "/usr/include/suitesparse")
 ENDIF()
-
-
-# Test script for checking our linker
-add_executable(mrcal_jni_test src/mrcal_test.cpp)
-target_link_libraries(mrcal_jni_test PUBLIC mrcal_jni)
-target_include_directories(mrcal_jni_test SYSTEM PRIVATE ${PROJECT_SOURCE_DIR}/vnlog)
-# add_dependencies(mrcal_jni_test )
-target_link_libraries(mrcal_jni_test PRIVATE
-    ${OpenCV_LIBS}
-    ${PROJECT_SOURCE_DIR}/vnlog/libvnlog.so
-)
 
 if (WITH_ASAN)
     target_link_libraries(mrcal_jni_test PRIVATE -fsanitize=address -fsanitize=undefined)
