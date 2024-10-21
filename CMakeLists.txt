@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.18)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-project(mrcal_jni LANGUAGES C CXX VERSION 1.0.0)
+project(mrcal LANGUAGES C CXX VERSION 1.0.0)
 
 option(BUILD_SHARED_LIBS "Build shared libraries" ON)
 
@@ -56,10 +56,8 @@ message("Depending on opencv ${OPENCV_LIB_PATH}")
 
 set(
     SRC
-    src/mrcal_jni.h
     src/mrcal_wrapper.h
     src/mrcal_wrapper.cpp
-    src/mrcal_jni.cpp
     libdogleg/dogleg.c
     mrcal/mrcal.c
     mrcal/cahvore.cc
@@ -91,20 +89,16 @@ set( CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin )
 set( CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib )
 
 # Create shared library
-add_library(mrcal_jni STATIC ${SRC})
-target_include_directories(mrcal_jni SYSTEM PUBLIC ${JNI_INCLUDE_DIRS} ${OPENCV_INCLUDE_PATH} src mrcal libdogleg)
-add_dependencies(mrcal_jni generate_minimath)
+add_library(mrcal STATIC ${SRC})
+target_include_directories(mrcal SYSTEM PUBLIC ${JNI_INCLUDE_DIRS} ${OPENCV_INCLUDE_PATH} src mrcal libdogleg)
+add_dependencies(mrcal generate_minimath)
 
 IF (WIN32)
     find_package(SuiteSparse CONFIG REQUIRED)
-    target_link_libraries(mrcal_jni ${OpenCV_LIBS} SuiteSparse::amd SuiteSparse::cholmod)
+    target_link_libraries(mrcal ${OpenCV_LIBS} SuiteSparse::amd SuiteSparse::cholmod)
 ELSE()
-    target_link_libraries(mrcal_jni ${OpenCV_LIBS} suitesparseconfig cholmod)
-    target_include_directories(mrcal_jni PUBLIC "/usr/include/suitesparse")
+    target_link_libraries(mrcal ${OpenCV_LIBS} suitesparseconfig cholmod)
+    target_include_directories(mrcal PUBLIC "/usr/include/suitesparse")
 ENDIF()
-
-if (WITH_ASAN)
-    target_link_libraries(mrcal_jni_test PRIVATE -fsanitize=address -fsanitize=undefined)
-endif ()
 
 unset(OPENCV_ARCH CACHE) # Set by Actions usually

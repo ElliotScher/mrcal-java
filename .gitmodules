@@ -7,6 +7,3 @@
 [submodule "vcpkg"]
 	path = vcpkg
 	url = https://github.com/microsoft/vcpkg
-[submodule "vnlog"]
-	path = vnlog
-	url = https://github.com/dkogan/vnlog
